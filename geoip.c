@@ -49,6 +49,7 @@ zend_function_entry geoip_functions[] = {
 	PHP_FE(geoip_id_by_name,   NULL)
 	PHP_FE(geoip_region_by_name,   NULL)
 	PHP_FE(geoip_isp_by_name,   NULL)
+	PHP_FE(geoip_asn_by_name,   NULL)
 	PHP_FE(geoip_db_avail,	NULL)
 	PHP_FE(geoip_db_get_all_info,	NULL)
 	PHP_FE(geoip_db_filename,	NULL)
@@ -592,6 +593,36 @@ PHP_FUNCTION(geoip_isp_by_name)
 	}
 	RETVAL_STRING(isp, 1);
 	free(isp);
+}
+/* }}} */
+
+/* {{{ proto string geoip_isp_by_name( string hostname )
+   Returns the ISP Name found in the GeoIP Database */
+PHP_FUNCTION(geoip_asn_by_name)
+{
+	GeoIP * gi;
+	char * hostname = NULL;
+	char * asn;
+	int arglen;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &hostname, &arglen) == FAILURE) {
+		return;
+	}
+	
+	if (GeoIP_db_avail(GEOIP_ASNUM_EDITION)) {
+		gi = GeoIP_open_type(GEOIP_ASNUM_EDITION, GEOIP_STANDARD);
+	}   else {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Required database not available at %s.", GeoIPDBFileName[GEOIP_ASNUM_EDITION]);
+		return;
+	}
+
+	asn = GeoIP_name_by_name(gi, hostname);
+	GeoIP_delete(gi);
+	if (asn == NULL) {
+		RETURN_FALSE;
+	}
+	RETVAL_STRING(isp, 1);
+	free(asn);
 }
 
 #if LIBGEOIP_VERSION >= 1004001
